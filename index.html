@@ -172,6 +172,7 @@ const S = {
   logCls: '',
   // Alerts
   aPre: 'today', aFrom: todayStr(), aTo: todayStr(), aSel: new Set(), aPhone: {},
+  showReset: false,
 };
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -224,13 +225,33 @@ function html() {
   return `<div class="app">
   <div class="hdr">
     <h1>📚 Homework Tracker</h1>
-    <div class="row" style="gap:4px">
-      <span style="font-size:11px;color:var(--g400)">Teacher:</span>
-      <input id="t-inp" style="width:90px;padding:4px 7px;font-size:13px" value="${esc(DB.teacher)}" placeholder="Name">
+    <div class="row" style="gap:8px">
+      <div class="row" style="gap:4px">
+        <span style="font-size:11px;color:var(--g400)">Teacher:</span>
+        <input id="t-inp" style="width:90px;padding:4px 7px;font-size:13px" value="${esc(DB.teacher)}" placeholder="Name">
+      </div>
+      <button id="btn-reset" style="background:none;border:1px solid var(--bd);border-radius:var(--r);padding:4px 8px;cursor:pointer;font-size:12px;color:var(--g500);font-family:var(--font)">↺ New Year</button>
     </div>
   </div>
   <div class="tabs">${tabs.map(([id,lbl]) => `<button class="tab${S.tab===id?' on':''}" data-tab="${id}">${lbl}</button>`).join('')}</div>
   <div id="tc">${tabContent()}</div>
+  ${S.showReset ? `
+  <div id="modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px">
+    <div style="background:#fff;border-radius:12px;padding:20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px">🚨 New Year Reset</h2>
+      <p style="font-size:13px;color:var(--g500);margin-bottom:6px;line-height:1.5">This will permanently delete:</p>
+      <ul style="font-size:13px;color:var(--g800);margin-bottom:12px;padding-left:18px;line-height:1.9">
+        <li>${DB.roster.length} student${DB.roster.length!==1?'s':''} across ${getClasses().length} class${getClasses().length!==1?'es':''}</li>
+        <li>${DB.homework.length} homework entr${DB.homework.length!==1?'ies':'y'}</li>
+        <li>All sent message history</li>
+      </ul>
+      <p style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:16px">⚠ This cannot be undone. Your teacher name will be kept.</p>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button id="reset-cancel"  class="btn" style="background:var(--g100);color:var(--g700)">Cancel</button>
+        <button id="reset-confirm" class="btn" style="background:var(--red);color:#fff">Reset Everything</button>
+      </div>
+    </div>
+  </div>` : ''}
 </div>`;
 }
 
@@ -578,6 +599,19 @@ function bind() {
     DB.saveRoster(); delete S.aPhone[b.dataset.sp]; render();
   }));
   all('[data-cp]', b => b.addEventListener('click', ()=>{ delete S.aPhone[b.dataset.cp]; render(); }));
+
+  // ── New Year Reset ──
+  on('btn-reset',    'click', ()=>{ S.showReset=true; render(); });
+  on('reset-cancel', 'click', ()=>{ S.showReset=false; render(); });
+  on('modal-overlay','click', e=>{ if(e.target.id==='modal-overlay'){ S.showReset=false; render(); } });
+  on('reset-confirm','click', ()=>{
+    DB.roster=[]; DB.homework=[]; DB.sentTs={};
+    DB.saveRoster(); DB.saveHomework(); DB.saveSentTs();
+    Object.assign(S,{tab:'roster',editHwId:null,rEditId:null,showImport:false,impPrev:[],impText:'',rErr:'',
+      rCls:'',rHwName:'',rDate:todayStr(),rNonSubs:{},rErr2:'',logCls:'',
+      aPre:'today',aFrom:todayStr(),aTo:todayStr(),aSel:new Set(),aPhone:{},showReset:false});
+    render();
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
