@@ -434,8 +434,7 @@ ${alerts.map(({student:s, hw})=>{
   const isSel   = S.aSel.has(s.id);
   const lastSent= DB.sentTs[s.id];
   const addingPh= S.aPhone[s.id] !== undefined;
-  const msg     = buildMsg(s, hw, DB.teacher);
-  const waUrl   = `whatsapp://send?phone=${s.parentPhone}&text=${encodeURIComponent(msg)}`;
+  const msg = buildMsg(s, hw, DB.teacher);
 
   return `<div class="card${optOut?' dimmed':isSel?' sel':''}">
   <div style="display:flex;gap:8px;align-items:flex-start">
@@ -452,7 +451,8 @@ ${alerts.map(({student:s, hw})=>{
       </div>
       ${!optOut?`<div class="row" style="flex-wrap:wrap;gap:6px">
         ${hasPh
-          ?`<a href="${waUrl}" target="_blank" class="btn btn-sm btn-grn" data-wa="${s.id}" style="text-decoration:none">Open WhatsApp ↗</a>
+          ?`<button class="btn btn-sm btn-grn" data-wa="${s.id}" data-ph="${s.parentPhone}" data-msg="${esc(msg)}">Open WhatsApp ↗</button>
+            <button class="btn-lnk" data-copy="${s.id}" data-cmsg="${esc(msg)}">Copy msg</button>
             <button class="btn-lnk" data-ms="${s.id}">Mark sent</button>`
           :addingPh
           ?`<input id="ph-${s.id}" type="tel" placeholder="6591234567" value="${esc(S.aPhone[s.id]||'')}"
@@ -560,7 +560,16 @@ function bind() {
     S.aSel.forEach(id=>{ DB.sentTs[id]=now; }); DB.saveSentTs(); S.aSel.clear(); render();
   });
   all('[data-ms]', b => b.addEventListener('click', ()=>{ DB.sentTs[b.dataset.ms]=new Date().toISOString(); DB.saveSentTs(); render(); }));
-  all('[data-wa]', a => a.addEventListener('click', ()=>{ DB.sentTs[a.dataset.wa]=new Date().toISOString(); DB.saveSentTs(); }));
+  all('[data-wa]', b => b.addEventListener('click', ()=>{
+    DB.sentTs[b.dataset.wa]=new Date().toISOString(); DB.saveSentTs();
+    window.location.href=`whatsapp://send?phone=${b.dataset.ph}&text=${encodeURIComponent(b.dataset.msg)}`;
+    setTimeout(render, 800);
+  }));
+  all('[data-copy]', b => b.addEventListener('click', ()=>{
+    navigator.clipboard.writeText(b.dataset.cmsg)
+      .then(()=>{ b.textContent='Copied!'; setTimeout(()=>{ b.textContent='Copy msg'; },1500); })
+      .catch(()=>{ b.textContent='Failed';  setTimeout(()=>{ b.textContent='Copy msg'; },1500); });
+  }));
   all('[data-ap]', b => b.addEventListener('click', ()=>{ S.aPhone[b.dataset.ap]=''; render(); document.getElementById(`ph-${b.dataset.ap}`)?.focus(); }));
   all('[data-sp]', b => b.addEventListener('click', ()=>{
     const ph=(document.getElementById(`ph-${b.dataset.sp}`)?.value||'').replace(/\D/g,'');
