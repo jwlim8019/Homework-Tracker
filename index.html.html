@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HW Tracker">
+  <link rel="manifest" href="manifest.json">
+  <title>Homework Tracker</title>
+  <style>
+    :root {
+      --pri: #4F46E5; --pri-lt: #EEF2FF;
+      --grn: #16a34a; --grn-lt: #F0FDF4;
+      --red: #dc2626; --red-lt: #FEF2F2;
+      --amb: #d97706; --amb-lt: #FFFBEB;
+      --g50: #F9FAFB; --g100: #F3F4F6; --g200: #E5E7EB;
+      --g400: #9CA3AF; --g500: #6B7280; --g700: #374151; --g800: #1F2937;
+      --bd: #E5E7EB; --r: 6px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); color: var(--g800); background: #fff; -webkit-tap-highlight-color: transparent; }
+    .app { max-width: 640px; margin: 0 auto; padding: 12px; }
+
+    /* Header */
+    .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .hdr h1 { font-size: 18px; font-weight: 700; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--bd); margin-bottom: 14px; overflow-x: auto; }
+    .tab { padding: 6px 10px; font-size: 13px; border: none; background: none; cursor: pointer;
+           border-radius: 4px 4px 0 0; color: var(--g500); white-space: nowrap; font-family: var(--font); }
+    .tab.on { background: var(--pri); color: #fff; }
+
+    /* Inputs */
+    input[type=text], input[type=tel], input[type=date], select, textarea {
+      font-family: var(--font); font-size: 14px; border: 1px solid var(--bd);
+      border-radius: var(--r); padding: 7px 9px; width: 100%; background: #fff; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--pri); }
+    input[type=checkbox] { width: auto; cursor: pointer; }
+
+    /* Buttons */
+    .btn { display: inline-block; padding: 7px 12px; border: 1px solid transparent;
+           border-radius: var(--r); cursor: pointer; font-size: 13px; font-family: var(--font);
+           text-align: center; text-decoration: none; line-height: 1; }
+    .btn-pri  { background: var(--pri); color: #fff; }
+    .btn-grn  { background: var(--grn); color: #fff; }
+    .btn-dark { background: var(--g700); color: #fff; }
+    .btn-out  { background: none; border-color: var(--pri); color: var(--pri); }
+    .btn-sm   { padding: 4px 9px; font-size: 12px; }
+    .btn-lnk  { background: none; border: none; cursor: pointer; font-size: 12px;
+                text-decoration: underline; color: var(--g400); font-family: var(--font); padding: 0; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Layout */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .c2 { grid-column: 1/-1; }
+    .row  { display: flex; align-items: center; gap: 8px; }
+    .rowb { display: flex; align-items: center; justify-content: space-between; }
+    .wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .ml { margin-left: auto; }
+
+    /* Cards / lists */
+    .card { border: 1px solid var(--bd); border-radius: var(--r); padding: 10px; margin-bottom: 8px; }
+    .card.sel   { border-color: var(--pri); background: var(--pri-lt); }
+    .card.dimmed{ opacity: .55; background: var(--g50); }
+    .rlist { border: 1px solid var(--bd); border-radius: var(--r); max-height: 260px; overflow-y: auto; margin-bottom: 6px; }
+    .ritem { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--bd); }
+    .ritem:last-child { border-bottom: none; }
+    .ritem.nr { background: var(--red-lt); }
+    .ritem.vr { background: var(--amb-lt); }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 14px; }
+    th,td { border: 1px solid var(--bd); padding: 6px 8px; text-align: left; }
+    th { background: var(--g50); color: var(--g500); font-size: 11px; font-weight: 600; }
+
+    /* Chips */
+    .chip { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    .cr { background: var(--red-lt); color: var(--red); }
+    .ca { background: var(--amb-lt); color: var(--amb); }
+    .cg { background: var(--grn-lt); color: var(--grn); }
+    .cp { background: var(--pri-lt); color: var(--pri); }
+
+    /* Reason toggle */
+    .rbtn { padding: 3px 8px; border: 1px solid var(--bd); border-radius: 4px; cursor: pointer;
+            font-size: 11px; font-weight: 600; background: #fff; color: var(--g400); font-family: var(--font); }
+    .rbtn.an { background: var(--red); color: #fff; border-color: var(--red); }
+    .rbtn.av { background: var(--amb); color: #fff; border-color: var(--amb); }
+
+    /* Misc */
+    .lbl { font-size: 11px; color: var(--g500); font-weight: 600; text-transform: uppercase;
+           letter-spacing: .05em; margin-bottom: 8px; }
+    .hint { color: var(--g400); font-size: 11px; margin: 3px 0; }
+    .err  { color: var(--red); font-size: 12px; margin: 4px 0; }
+    .mono { font-family: monospace; }
+    .sent-badge { font-size: 11px; background: var(--grn-lt); color: var(--grn);
+                  border: 1px solid #BBF7D0; padding: 2px 6px; border-radius: 4px; }
+    .dnc-badge  { font-size: 11px; background: var(--g100); color: var(--g500); padding: 2px 6px; border-radius: 4px; }
+    .impanel { border: 1px solid var(--bd); border-radius: var(--r); padding: 12px; background: var(--g50); margin-bottom: 14px; }
+    .empty { text-align: center; padding: 40px 20px; color: var(--g400); }
+    .empty .ico { font-size: 40px; margin-bottom: 8px; }
+    .prev-hdr { display: grid; grid-template-columns: 20px 36px 28px 1fr 90px 28px 1fr;
+                gap: 4px; padding: 4px 8px; background: var(--g50); color: var(--g400);
+                font-size: 11px; font-weight: 600; }
+    .prev-row { display: grid; grid-template-columns: 20px 36px 28px 1fr 90px 28px 1fr;
+                gap: 4px; padding: 4px 8px; font-size: 11px; }
+    .prev-row.er { background: var(--red-lt); }
+    .prev-scroll { border: 1px solid var(--bd); border-radius: var(--r); max-height: 160px; overflow-y: auto; }
+    .sec-cls { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+'use strict';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const todayStr   = () => new Date().toLocaleDateString('en-CA');
+const daysAgoStr = n  => { const d = new Date(); d.setDate(d.getDate()-n); return d.toLocaleDateString('en-CA'); };
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+function parseBulk(text, existing) {
+  const out = [];
+  text.split('\n').forEach((raw, i) => {
+    const row = raw.trim(); if (!row) return;
+    const cells = row.split(/[\t,]/).map(c => c.trim().replace(/^"|"$/g,''));
+    if (i === 0 && cells[0].toLowerCase() === 'class') return;
+    const [cls='',reg='',name='',phone='',dnc=''] = cells;
+    const errs = [];
+    if (!cls)  errs.push('missing class');
+    if (!reg)  errs.push('missing reg');
+    if (!name) errs.push('missing name');
+    if (reg && cls && existing.some(s => s.regNum===reg && s.className===cls.toUpperCase())) errs.push('already exists');
+    out.push({ className:cls.toUpperCase(), regNum:reg, name, parentPhone:phone.replace(/\D/g,''),
+               doNotContact:['y','yes','1','true'].includes(dnc.toLowerCase()), errors:errs });
+  });
+  return out;
+}
+
+function buildMsg(s, hwItems, teacher) {
+  const lines = hwItems.map(h => `• ${h.date}: ${h.hwName}`).join('\n');
+  return `Dear Parent/Guardian of ${s.name} (Reg ${s.regNum}),\n\nYour child has not submitted the following homework without a valid reason:\n\n${lines}\n\nKindly ensure the above is submitted as soon as possible.\n\nThank you.${teacher ? '\n— '+teacher : ''}`;
+}
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const lsSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+const DB = {
+  roster:   lsGet('hw_roster')  || [],
+  homework: lsGet('hw_hw')      || [],
+  sentTs:   lsGet('hw_sent_ts') || {},
+  teacher:  localStorage.getItem('hw_teacher') || '',
+  saveRoster()   { lsSet('hw_roster',  this.roster); },
+  saveHomework() { lsSet('hw_hw',      this.homework); },
+  saveSentTs()   { lsSet('hw_sent_ts', this.sentTs); },
+  saveTeacher()  { localStorage.setItem('hw_teacher', this.teacher); },
+};
+
+// ── UI State ──────────────────────────────────────────────────────────────────
+const S = {
+  tab: 'roster', editHwId: null,
+  // Roster
+  rEditId: null, showImport: false, impPrev: [], impText: '', rErr: '',
+  // Record
+  rCls: '', rHwName: '', rDate: todayStr(), rNonSubs: {}, rErr2: '',
+  // Log
+  logCls: '',
+  // Alerts
+  aPre: 'today', aFrom: todayStr(), aTo: todayStr(), aSel: new Set(), aPhone: {},
+};
+
+// ── Computed ──────────────────────────────────────────────────────────────────
+const getClasses = () => [...new Set(DB.roster.map(s => s.className))].sort();
+
+function alertRange() {
+  const t = todayStr();
+  if (S.aPre==='today') return [t, t];
+  if (S.aPre==='3days') return [daysAgoStr(2), t];
+  if (S.aPre==='7days') return [daysAgoStr(6), t];
+  return [S.aFrom, S.aTo];
+}
+
+function getAlerts() {
+  const [from, to] = alertRange();
+  const rel = DB.homework.filter(h => h.date>=from && h.date<=to);
+  return DB.roster
+    .filter(s => rel.some(h => h.className===s.className && h.nonSubmitters.some(n => n.regNum===s.regNum && n.reason==='N')))
+    .map(s => ({
+      student: s,
+      hw: rel.filter(h => h.className===s.className && h.nonSubmitters.some(n => n.regNum===s.regNum && n.reason==='N'))
+             .map(h => ({date:h.date, hwName:h.hwName}))
+             .sort((a,b) => a.date.localeCompare(b.date))
+    }))
+    .sort((a,b) => a.student.name.localeCompare(b.student.name));
+}
+
+function todayBadge() {
+  const t = todayStr();
+  return DB.roster.filter(s =>
+    DB.homework.filter(h => h.date===t && h.className===s.className)
+               .some(h => h.nonSubmitters.some(n => n.regNum===s.regNum && n.reason==='N'))
+  ).length;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('root').innerHTML = html();
+  bind();
+}
+
+function html() {
+  const b = todayBadge();
+  const tabs = [
+    ['roster', '👥 Roster'],
+    ['record', S.editHwId ? '✏️ Edit HW' : '📝 Record HW'],
+    ['log',    '📋 Log'],
+    ['alerts', `🔔 Alerts${b ? ` (${b}) 🔴` : ''}`],
+  ];
+  return `<div class="app">
+  <div class="hdr">
+    <h1>📚 Homework Tracker</h1>
+    <div class="row" style="gap:4px">
+      <span style="font-size:11px;color:var(--g400)">Teacher:</span>
+      <input id="t-inp" style="width:90px;padding:4px 7px;font-size:13px" value="${esc(DB.teacher)}" placeholder="Name">
+    </div>
+  </div>
+  <div class="tabs">${tabs.map(([id,lbl]) => `<button class="tab${S.tab===id?' on':''}" data-tab="${id}">${lbl}</button>`).join('')}</div>
+  <div id="tc">${tabContent()}</div>
+</div>`;
+}
+
+const tabContent = () => ({roster:bRoster, record:bRecord, log:bLog, alerts:bAlerts}[S.tab] || (() => ''))();
+
+// ── Roster ────────────────────────────────────────────────────────────────────
+function bRoster() {
+  const cls = getClasses();
+  const ev  = S.rEditId ? DB.roster.find(s => s.id===S.rEditId) || {} : {};
+  let h = `<p class="lbl">Student Roster</p>`;
+
+  if (!S.showImport) {
+    h += `<div class="g2" style="margin-bottom:6px">
+      <input id="r-cls" placeholder="Class (e.g. 6A)" value="${esc(ev.className||'')}" list="clist" style="text-transform:uppercase">
+      <datalist id="clist">${cls.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <input id="r-reg"  placeholder="Register No."   value="${esc(ev.regNum||'')}">
+      <input id="r-name" placeholder="Student Name"   value="${esc(ev.name||'')}">
+      <input id="r-ph"   placeholder="Parent WhatsApp (e.g. 6591234567)" value="${esc(ev.parentPhone||'')}" class="c2">
+    </div>
+    <label class="row" style="margin-bottom:6px;font-size:13px;cursor:pointer;gap:6px">
+      <input type="checkbox" id="r-dnc" ${ev.doNotContact?'checked':''}> Do not contact parent
+    </label>
+    ${S.rErr ? `<p class="err">${esc(S.rErr)}</p>` : ''}
+    <div class="row" style="margin-bottom:16px">
+      <button class="btn btn-pri" id="r-save">${S.rEditId?'Update':'Add Student'}</button>
+      ${S.rEditId ? `<button class="btn-lnk" id="r-can">Cancel</button>` : ''}
+      <button class="btn btn-out btn-sm ml" id="r-imp">Bulk import ↑</button>
+    </div>`;
+  } else {
+    h += bImport();
+  }
+
+  cls.forEach(c => {
+    const students = DB.roster.filter(s=>s.className===c).sort((a,b)=>+a.regNum-+b.regNum);
+    h += `<p class="sec-cls">Class ${esc(c)} <span style="font-weight:400;color:var(--g400)">(${students.length})</span></p>
+    <table><thead><tr><th>Reg</th><th>Name</th><th>Phone</th><th></th><th></th></tr></thead><tbody>
+    ${students.map(s=>`<tr${s.doNotContact?' style="color:var(--g400)"':''}>
+      <td class="mono" style="font-size:11px">${esc(s.regNum)}</td>
+      <td>${esc(s.name)}</td>
+      <td style="font-size:11px">${esc(s.parentPhone)||'—'}</td>
+      <td style="text-align:center">${s.doNotContact?'🚫':''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-lnk" style="color:var(--pri)" data-es="${s.id}">Edit</button>
+        <button class="btn-lnk" style="color:var(--red);margin-left:4px" data-ds="${s.id}">Del</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table>`;
+  });
+
+  if (!cls.length && !S.showImport) h += `<p style="font-size:13px;color:var(--g400)">No students yet.</p>`;
+  return h;
+}
+
+function bImport() {
+  const prev = S.impPrev;
+  const ok   = prev.filter(r=>r.errors.length===0).length;
+  const bad  = prev.filter(r=>r.errors.length>0).length;
+  return `<div class="impanel">
+  <div class="rowb" style="margin-bottom:6px">
+    <span style="font-size:14px;font-weight:600">Bulk Import</span>
+    <button class="btn-lnk" id="r-ihide">Cancel</button>
+  </div>
+  <p class="hint">One student per line. Columns (comma- or tab-separated):</p>
+  <code style="font-size:11px;background:var(--g200);padding:2px 6px;border-radius:4px;display:block;margin-bottom:4px">
+    Class, RegNo, Name, ParentPhone (opt), DoNotContact (opt: Y/N)
+  </code>
+  <p class="hint" style="margin-bottom:6px">Header row auto-skipped. Phone: e.g. 6591234567. Y in 5th col = do not contact.</p>
+  <textarea id="csv-inp" style="height:96px;resize:vertical;font-family:monospace;font-size:11px;margin-bottom:6px"
+    placeholder="6A,1,Alice Tan,6591234567,N&#10;6A,2,Bob Lim,,Y&#10;6A,3,Carol Ng">${esc(S.impText)}</textarea>
+  <div class="row" style="margin-bottom:8px">
+    <button class="btn btn-dark btn-sm" id="r-iparse">Preview</button>
+    ${ok>0?`<button class="btn btn-pri btn-sm" id="r-iimport">Import ${ok} student${ok!==1?'s':''}</button>`:''}
+  </div>
+  ${prev.length ? `
+  <p style="font-size:11px;margin-bottom:4px">
+    <span style="color:var(--grn);font-weight:600">${ok} ready</span>
+    ${bad?`<span style="color:var(--red);font-weight:600;margin-left:10px">${bad} with errors (skipped)</span>`:''}
+  </p>
+  <div class="prev-scroll">
+    <div class="prev-hdr"><span>#</span><span>Cls</span><span>Reg</span><span>Name</span><span>Phone</span><span>DNC</span><span>Status</span></div>
+    ${prev.map((r,i)=>`<div class="prev-row${r.errors.length?' er':''}">
+      <span style="color:var(--g400)">${i+1}</span>
+      <span style="font-weight:600">${esc(r.className)||'—'}</span>
+      <span class="mono">${esc(r.regNum)||'—'}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)||'—'}</span>
+      <span style="color:var(--g400);overflow:hidden">${esc(r.parentPhone)||'—'}</span>
+      <span style="text-align:center">${r.doNotContact?'🚫':''}</span>
+      <span style="color:${r.errors.length?'var(--red)':'var(--grn)'}">
+        ${r.errors.length?esc(r.errors.join(', ')):'✓ OK'}
+      </span>
+    </div>`).join('')}
+  </div>` : ''}
+</div>`;
+}
+
+// ── Record ────────────────────────────────────────────────────────────────────
+function bRecord() {
+  const cls      = getClasses();
+  const selCls   = cls.includes(S.rCls) ? S.rCls : (cls[0]||'');
+  const students = DB.roster.filter(s=>s.className===selCls).sort((a,b)=>+a.regNum-+b.regNum);
+  const nN = Object.values(S.rNonSubs).filter(v=>v==='N').length;
+  const nV = Object.values(S.rNonSubs).filter(v=>v==='V').length;
+
+  return `<p class="lbl">${S.editHwId?'Edit Entry':'Record Homework'}</p>
+  <div class="g3" style="margin-bottom:8px">
+    <select id="rec-cls">
+      ${cls.map(c=>`<option${c===selCls?' selected':''}>${esc(c)}</option>`).join('')}
+      ${!cls.length?'<option value="">No classes yet</option>':''}
+    </select>
+    <input id="rec-hw" placeholder="Homework name" value="${esc(S.rHwName)}">
+    <input type="date" id="rec-dt" value="${S.rDate}">
+  </div>
+  ${S.rErr2?`<p class="err">${esc(S.rErr2)}</p>`:''}
+  <p class="hint" style="margin-bottom:4px">Unchecked = submitted. Check to mark non-submitted, then assign N or V.</p>
+  <div class="rlist">
+    ${students.map(s=>{
+      const r = S.rNonSubs[s.regNum];
+      return `<div class="ritem${r==='N'?' nr':r==='V'?' vr':''}">
+        <input type="checkbox" ${r?'checked':''} data-reg="${esc(s.regNum)}" class="ns-cb">
+        <span class="mono" style="font-size:11px;width:22px;flex-shrink:0">${esc(s.regNum)}</span>
+        <span style="font-size:13px;flex:1">${esc(s.name)}</span>
+        ${r?`<button class="rbtn${r==='N'?' an':''}" data-reg="${esc(s.regNum)}" data-r="N">N</button>
+             <button class="rbtn${r==='V'?' av':''}" data-reg="${esc(s.regNum)}" data-r="V">V</button>`:''}
+      </div>`;
+    }).join('')}
+    ${!students.length?'<p style="padding:12px;font-size:13px;color:var(--g400)">No students in this class. Add them in Roster.</p>':''}
+  </div>
+  <p class="hint" style="margin-bottom:10px">${nN} × N &nbsp;·&nbsp; ${nV} × V &nbsp;·&nbsp; ${students.length-nN-nV} submitted</p>
+  <div class="row">
+    <button class="btn btn-pri" id="rec-save">${S.editHwId?'Save Changes':'Record'}</button>
+    ${S.editHwId?`<button class="btn-lnk" id="rec-can">Cancel</button>`:''}
+  </div>`;
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function bLog() {
+  const hwCls = [...new Set(DB.homework.map(h=>h.className))].sort();
+  const list  = [...DB.homework]
+    .filter(h => !S.logCls || h.className===S.logCls)
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+  return `<div class="rowb" style="margin-bottom:10px">
+  <p class="lbl" style="margin:0">Homework Log</p>
+  <select id="log-f" style="width:auto;padding:4px 7px;font-size:12px">
+    <option value="">All classes</option>
+    ${hwCls.map(c=>`<option value="${esc(c)}"${S.logCls===c?' selected':''}>${esc(c)}</option>`).join('')}
+  </select>
+</div>
+${list.map(h=>`<div class="card">
+  <div class="rowb">
+    <div class="wrap" style="gap:6px">
+      <span class="chip cp">${esc(h.className)}</span>
+      <span style="font-size:13px;font-weight:500">${esc(h.hwName)}</span>
+      <span style="font-size:11px;color:var(--g400)">${h.date}</span>
+    </div>
+    <div class="row" style="gap:6px;margin-left:8px">
+      <button class="btn-lnk" style="color:var(--pri)" data-eh="${h.id}">Edit</button>
+      <button class="btn-lnk" style="color:var(--red)" data-dh="${h.id}">Del</button>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:6px">
+    ${h.nonSubmitters.length===0
+      ?'<span style="font-size:11px;color:var(--grn)">✓ All submitted</span>'
+      :h.nonSubmitters.map(n=>`<span class="chip ${n.reason==='N'?'cr':'ca'}">${esc(n.regNum)} ${n.reason}</span>`).join('')}
+  </div>
+</div>`).join('')}
+${!list.length?'<p style="font-size:13px;color:var(--g400)">No entries yet.</p>':''}`;
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+function bAlerts() {
+  const alerts = getAlerts();
+  const contact = alerts.filter(a=>!a.student.doNotContact);
+  const allSel  = contact.length>0 && contact.every(a=>S.aSel.has(a.student.id));
+
+  return `<p class="lbl">WhatsApp Alerts</p>
+<div class="wrap" style="margin-bottom:10px">
+  ${[['today','Today'],['3days','Last 3 days'],['7days','Last 7 days'],['custom','Custom']].map(([v,l])=>
+    `<button class="btn btn-sm${S.aPre===v?' btn-pri':' btn-out'}" data-pre="${v}">${l}</button>`).join('')}
+  ${S.aPre==='custom'?`
+    <input type="date" id="a-from" value="${S.aFrom}" style="width:auto;padding:4px 7px;font-size:12px">
+    <span style="font-size:11px;color:var(--g400)">to</span>
+    <input type="date" id="a-to"   value="${S.aTo}"   style="width:auto;padding:4px 7px;font-size:12px">
+  `:''}
+</div>
+
+${alerts.length?`<div class="row" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--bd);font-size:12px">
+  <label class="row" style="gap:6px;cursor:pointer;color:var(--g500)">
+    <input type="checkbox" id="sel-all" ${allSel?'checked':''}> ${allSel?'Deselect all':'Select all'}
+  </label>
+  <span style="color:var(--g400);margin:0 4px">|</span>
+  <span style="color:var(--g400)">${alerts.length} student${alerts.length!==1?'s':''} · ${contact.length} contactable</span>
+  ${S.aSel.size?`<button class="btn btn-sm btn-grn ml" id="mark-all">✓ Mark ${S.aSel.size} sent</button>`:''}
+</div>`:''}
+
+${!alerts.length?`<div class="empty"><div class="ico">✅</div><p style="font-size:13px">No N-status submissions in this period.</p></div>`:''}
+
+${alerts.map(({student:s, hw})=>{
+  const optOut  = !!s.doNotContact;
+  const hasPh   = !!s.parentPhone;
+  const isSel   = S.aSel.has(s.id);
+  const lastSent= DB.sentTs[s.id];
+  const addingPh= S.aPhone[s.id] !== undefined;
+  const msg     = buildMsg(s, hw, DB.teacher);
+  const waUrl   = `whatsapp://send?phone=${s.parentPhone}&text=${encodeURIComponent(msg)}`;
+
+  return `<div class="card${optOut?' dimmed':isSel?' sel':''}">
+  <div style="display:flex;gap:8px;align-items:flex-start">
+    <input type="checkbox" ${isSel?'checked':''} ${optOut?'disabled':''} data-sel="${s.id}" style="margin-top:3px">
+    <div style="flex:1;min-width:0">
+      <div class="wrap" style="margin-bottom:6px">
+        <span style="font-weight:600;font-size:14px">${esc(s.name)}</span>
+        <span style="font-size:11px;color:var(--g400)">Reg ${esc(s.regNum)} · ${esc(s.className)}</span>
+        ${optOut?`<span class="dnc-badge">Do not contact</span>`:''}
+        ${lastSent?`<span class="sent-badge">Sent ${new Date(lastSent).toLocaleString('en-SG',{dateStyle:'short',timeStyle:'short'})}</span>`:''}
+      </div>
+      <div class="wrap" style="margin-bottom:8px">
+        ${hw.map(h=>`<span class="chip cr">${esc(h.date)}: ${esc(h.hwName)}</span>`).join('')}
+      </div>
+      ${!optOut?`<div class="row" style="flex-wrap:wrap;gap:6px">
+        ${hasPh
+          ?`<a href="${waUrl}" target="_blank" class="btn btn-sm btn-grn" data-wa="${s.id}" style="text-decoration:none">Open WhatsApp ↗</a>
+            <button class="btn-lnk" data-ms="${s.id}">Mark sent</button>`
+          :addingPh
+          ?`<input id="ph-${s.id}" type="tel" placeholder="6591234567" value="${esc(S.aPhone[s.id]||'')}"
+              style="width:130px;padding:4px 7px;font-size:12px">
+            <button class="btn btn-sm btn-pri" data-sp="${s.id}">Save</button>
+            <button class="btn-lnk" data-cp="${s.id}">Cancel</button>`
+          :`<button class="btn-lnk" style="color:var(--pri)" data-ap="${s.id}">+ Add phone</button>`
+        }
+      </div>`:''}
+    </div>
+  </div>
+</div>`;
+}).join('')}`;
+}
+
+// ── Bind ──────────────────────────────────────────────────────────────────────
+function bind() {
+  const $ = id => document.getElementById(id);
+  const on = (id, ev, fn) => { const el=$(id); if(el) el.addEventListener(ev, fn); };
+  const all = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
+  const readRec = () => { S.rHwName=$('rec-hw')?.value||S.rHwName; S.rDate=$('rec-dt')?.value||S.rDate; };
+
+  // Teacher
+  on('t-inp', 'change', e => { DB.teacher=e.target.value; DB.saveTeacher(); });
+
+  // Tabs
+  all('.tab', btn => btn.addEventListener('click', () => {
+    if (btn.dataset.tab !== 'record') S.editHwId = null;
+    S.tab = btn.dataset.tab;
+    if (S.tab==='record' && !S.editHwId) {
+      const cls = getClasses();
+      if (!cls.includes(S.rCls)) S.rCls = cls[0]||'';
+      S.rHwName=''; S.rDate=todayStr(); S.rNonSubs={}; S.rErr2='';
+    }
+    render();
+  }));
+
+  // ── Roster ──
+  on('r-save', 'click', () => {
+    const cls  = ($('r-cls')?.value||'').toUpperCase().trim();
+    const reg  = ($('r-reg')?.value||'').trim();
+    const name = ($('r-name')?.value||'').trim();
+    const ph   = ($('r-ph')?.value||'').replace(/\D/g,'');
+    const dnc  = $('r-dnc')?.checked||false;
+    if (!cls||!reg||!name) { S.rErr='Reg No., Name, and Class are required.'; render(); return; }
+    if (DB.roster.some(s=>s.regNum===reg&&s.className===cls&&s.id!==S.rEditId)) { S.rErr='Reg No. already exists in this class.'; render(); return; }
+    S.rErr='';
+    const entry = {className:cls,regNum:reg,name,parentPhone:ph,doNotContact:dnc,id:S.rEditId||uid()};
+    DB.roster = S.rEditId ? DB.roster.map(s=>s.id===S.rEditId?entry:s) : [...DB.roster,entry];
+    DB.saveRoster(); S.rEditId=null; render();
+  });
+  on('r-can',    'click', () => { S.rEditId=null; S.rErr=''; render(); });
+  on('r-imp',    'click', () => { S.showImport=true; S.impPrev=[]; S.impText=''; render(); });
+  on('r-ihide',  'click', () => { S.showImport=false; S.impPrev=[]; render(); });
+  on('r-iparse', 'click', () => { S.impText=$('csv-inp')?.value||''; S.impPrev=parseBulk(S.impText,DB.roster); render(); });
+  on('r-iimport','click', () => {
+    DB.roster=[...DB.roster,...S.impPrev.filter(r=>r.errors.length===0).map(r=>({...r,id:uid()}))];
+    DB.saveRoster(); S.showImport=false; S.impPrev=[]; S.impText=''; render();
+  });
+  all('[data-es]', b => b.addEventListener('click', ()=>{ S.rEditId=b.dataset.es; S.rErr=''; render(); }));
+  all('[data-ds]', b => b.addEventListener('click', ()=>{ DB.roster=DB.roster.filter(s=>s.id!==b.dataset.ds); DB.saveRoster(); render(); }));
+
+  // ── Record ──
+  on('rec-cls', 'change', e => { S.rCls=e.target.value; S.rNonSubs={}; render(); });
+  all('.ns-cb', cb => cb.addEventListener('change', () => {
+    readRec();
+    cb.checked ? S.rNonSubs[cb.dataset.reg]='N' : delete S.rNonSubs[cb.dataset.reg];
+    render();
+  }));
+  all('[data-r]', b => b.addEventListener('click', () => { readRec(); S.rNonSubs[b.dataset.reg]=b.dataset.r; render(); }));
+  on('rec-save', 'click', () => {
+    const hwName=($('rec-hw')?.value||'').trim();
+    const date=$('rec-dt')?.value||todayStr();
+    const cls=$('rec-cls')?.value||S.rCls;
+    if (!hwName) { S.rErr2='Homework name required.'; render(); return; }
+    S.rErr2='';
+    const entry={id:S.editHwId||uid(),className:cls,hwName,date,nonSubmitters:Object.entries(S.rNonSubs).map(([regNum,reason])=>({regNum,reason}))};
+    DB.homework=S.editHwId?DB.homework.map(h=>h.id===S.editHwId?entry:h):[...DB.homework,entry];
+    DB.saveHomework(); S.editHwId=null; S.rNonSubs={}; S.rHwName=''; S.rDate=todayStr(); S.tab='log'; render();
+  });
+  on('rec-can', 'click', () => { S.editHwId=null; S.rNonSubs={}; S.tab='log'; render(); });
+
+  // ── Log ──
+  on('log-f', 'change', e => { S.logCls=e.target.value; render(); });
+  all('[data-eh]', b => b.addEventListener('click', () => {
+    const h=DB.homework.find(h=>h.id===b.dataset.eh); if(!h) return;
+    S.editHwId=h.id; S.rCls=h.className; S.rHwName=h.hwName; S.rDate=h.date;
+    S.rNonSubs={}; h.nonSubmitters.forEach(n=>{ S.rNonSubs[n.regNum]=n.reason; });
+    S.tab='record'; render();
+  }));
+  all('[data-dh]', b => b.addEventListener('click', () => { DB.homework=DB.homework.filter(h=>h.id!==b.dataset.dh); DB.saveHomework(); render(); }));
+
+  // ── Alerts ──
+  all('[data-pre]', b => b.addEventListener('click', ()=>{ S.aPre=b.dataset.pre; render(); }));
+  on('a-from', 'change', e=>{ S.aFrom=e.target.value; render(); });
+  on('a-to',   'change', e=>{ S.aTo=e.target.value;   render(); });
+  on('sel-all', 'change', e=>{
+    const c=getAlerts().filter(a=>!a.student.doNotContact);
+    e.target.checked ? c.forEach(a=>S.aSel.add(a.student.id)) : S.aSel.clear();
+    render();
+  });
+  all('[data-sel]', cb => cb.addEventListener('change', ()=>{ cb.checked?S.aSel.add(cb.dataset.sel):S.aSel.delete(cb.dataset.sel); render(); }));
+  on('mark-all', 'click', ()=>{
+    const now=new Date().toISOString();
+    S.aSel.forEach(id=>{ DB.sentTs[id]=now; }); DB.saveSentTs(); S.aSel.clear(); render();
+  });
+  all('[data-ms]', b => b.addEventListener('click', ()=>{ DB.sentTs[b.dataset.ms]=new Date().toISOString(); DB.saveSentTs(); render(); }));
+  all('[data-wa]', a => a.addEventListener('click', ()=>{ DB.sentTs[a.dataset.wa]=new Date().toISOString(); DB.saveSentTs(); }));
+  all('[data-ap]', b => b.addEventListener('click', ()=>{ S.aPhone[b.dataset.ap]=''; render(); document.getElementById(`ph-${b.dataset.ap}`)?.focus(); }));
+  all('[data-sp]', b => b.addEventListener('click', ()=>{
+    const ph=(document.getElementById(`ph-${b.dataset.sp}`)?.value||'').replace(/\D/g,'');
+    if(!ph) return;
+    DB.roster=DB.roster.map(s=>s.id===b.dataset.sp?{...s,parentPhone:ph}:s);
+    DB.saveRoster(); delete S.aPhone[b.dataset.sp]; render();
+  }));
+  all('[data-cp]', b => b.addEventListener('click', ()=>{ delete S.aPhone[b.dataset.cp]; render(); }));
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+const initCls = getClasses();
+if (initCls.length) S.rCls = initCls[0];
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+render();
+</script>
+</body>
+</html>
